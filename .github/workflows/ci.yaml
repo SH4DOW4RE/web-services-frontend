@@ -1,0 +1,180 @@
+name: MyMarketplace CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Each job has its own runner. Both browser jobs use headless Chrome, and
+# pytest's session-scoped driver fixture reuses one window within each job.
+env:
+  API_URL: http://127.0.0.1:4010
+  OPENAPI_PATH: schema/openapi.yaml
+
+jobs:
+  lint:
+    name: Lint (Python and JavaScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Lint Python with Ruff
+        run: |
+          python -m pip install ruff
+          ruff check --select E4,E7,E9,F conftest.py pages.py run_tests.py tests/
+
+      - name: Lint JavaScript with ESLint
+        run: |
+          npx --yes eslint@9 \
+            --no-config-lookup \
+            --rule 'no-unreachable:error' \
+            --rule 'no-dupe-args:error' \
+            --rule 'no-constant-condition:error' \
+            --rule 'no-debugger:error' \
+            frontend/api.js frontend/script.js \
+            tests/integration/mock_api.js tests_js/unit/*.cjs
+
+  unit:
+    name: JavaScript unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Confirm OpenAPI specification is present
+        run: test -f "$OPENAPI_PATH"
+
+      # Uses the Node.js built-in test runner; no npm install is needed.
+      - name: Run 25 unit tests
+        run: npm test
+
+  integration:
+    name: Browser integration tests (mock API)
+    needs: [lint, unit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+
+      - name: Install Python test dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Install matching headless Chrome and ChromeDriver
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          install-chromedriver: true
+          install-dependencies: true
+
+      - name: Run integration tests (no Prism required)
+        run: |
+          mkdir -p reports
+          python -m pytest -v -ra tests/integration \
+            --backend=prism \
+            --api-url="$API_URL" \
+            --chrome-binary="${{ steps.chrome.outputs.chrome-path }}" \
+            --chromedriver-path="${{ steps.chrome.outputs.chromedriver-path }}" \
+            --junitxml=reports/integration.xml
+
+      - name: Upload integration reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results
+          path: |
+            reports/integration.xml
+            artifacts/
+          if-no-files-found: ignore
+
+  e2e:
+    name: E2E tests (Prism OpenAPI mock)
+    needs: [integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Python test dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Install matching headless Chrome and ChromeDriver
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          install-chromedriver: true
+          install-dependencies: true
+
+      - name: Install Prism CLI
+        run: npm install --global @stoplight/prism-cli@5
+
+      - name: Start Prism using the checked-in OpenAPI file
+        run: |
+          test -f "$OPENAPI_PATH" || { echo "Missing $OPENAPI_PATH"; exit 1; }
+          nohup prism mock "$OPENAPI_PATH" --host 127.0.0.1 --port 4010 > prism.log 2>&1 < /dev/null &
+          echo $! > prism.pid
+
+          for i in $(seq 1 45); do
+            if curl --silent --fail --output /dev/null "$API_URL/health"; then
+              echo "Prism is ready at $API_URL"
+              exit 0
+            fi
+            if ! kill -0 "$(cat prism.pid)" 2>/dev/null; then
+              echo 'Prism exited before it became ready.'
+              cat prism.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo 'Prism did not become ready.'
+          cat prism.log
+          exit 1
+
+      - name: Run E2E tests against Prism
+        run: |
+          mkdir -p reports
+          python -m pytest -v -ra \
+            tests/test_auth.py tests/test_cart.py tests/test_shop.py \
+            --backend=prism \
+            --api-url="$API_URL" \
+            --chrome-binary="${{ steps.chrome.outputs.chrome-path }}" \
+            --chromedriver-path="${{ steps.chrome.outputs.chromedriver-path }}" \
+            --junitxml=reports/e2e.xml
+
+      - name: Upload E2E reports, screenshots and Prism logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            reports/e2e.xml
+            artifacts/
+            prism.log
+          if-no-files-found: ignore

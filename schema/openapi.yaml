@@ -1,0 +1,632 @@
+openapi: 3.1.0
+info:
+  title: MyMarketplace
+  version: 0.0.0
+tags:
+  - name: Health
+  - name: User
+  - name: Products
+  - name: Cart
+paths:
+  /cart:
+    get:
+      operationId: Cart_list
+      description: Get Own Cart
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartModel'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartError_Empty'
+      tags:
+        - Cart
+    post:
+      operationId: Cart_add_to_cart
+      description: Add Product to Cart
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductError_NotFound'
+      tags:
+        - Cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartAddition'
+    patch:
+      operationId: Cart_edit
+      description: Edit Quantity of Item
+      parameters:
+        - name: index
+          in: query
+          required: true
+          schema:
+            type: integer
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartError_NotFound'
+      tags:
+        - Cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartQuantityUpdate'
+    delete:
+      operationId: Cart_delete
+      description: Remove Item
+      parameters:
+        - name: index
+          in: query
+          required: true
+          schema:
+            type: integer
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartError_NotFound'
+      tags:
+        - Cart
+  /cart/clear:
+    delete:
+      operationId: Cart_clear
+      description: Clear Cart
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_Unexpected'
+      tags:
+        - Cart
+  /health:
+    get:
+      operationId: Utils_health
+      description: Health Endpoint
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+      tags:
+        - Health
+  /products:
+    get:
+      operationId: Products_list
+      description: List All Products
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductModel'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductError_Empty'
+      tags:
+        - Products
+  /products/search:
+    get:
+      operationId: Products_search_by_name
+      description: Search Product by Name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductModel'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductError_Empty'
+      tags:
+        - Products
+  /products/{id}:
+    get:
+      operationId: Products_get_product
+      description: Get Product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUIDv4'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductModel'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductError_NotFound'
+      tags:
+        - Products
+  /user:
+    patch:
+      operationId: Users_edit
+      description: Edit
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserModel_Read'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_Unexpected'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserModel_Partial'
+    delete:
+      operationId: Users_delete
+      description: Delete
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_Unexpected'
+      tags:
+        - User
+  /user/login:
+    post:
+      operationId: Users_login
+      description: Login
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserModel_Read'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserError_Login'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_Unexpected'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserModel_Login'
+  /user/logout:
+    get:
+      operationId: Users_logout
+      description: Logout
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+      tags:
+        - User
+  /user/register:
+    post:
+      operationId: Users_register
+      description: Register
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserModel_Read'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserError_Duplicate'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_Unexpected'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserModel_Login'
+components:
+  schemas:
+    CartAddition:
+      type: object
+      required:
+        - product
+        - quantity
+      properties:
+        product:
+          $ref: '#/components/schemas/UUIDv4'
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000
+    CartError_Empty:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 404
+          message: Cart is empty.
+    CartError_NotFound:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 404
+          message: Cart Product Not Found.
+    CartModel:
+      type: object
+      required:
+        - owner
+        - items
+      properties:
+        owner:
+          $ref: '#/components/schemas/UserModel_Read'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoductModel_Quantified'
+      examples:
+        - owner:
+            uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+            username: bob_123
+          items:
+            - uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+              seller:
+                uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+                username: bob_123
+              name: T-Shirt
+              images:
+                - 27463fb9-feaf-4a30-a942-35b37ea541d4
+                - 27463fb9-feaf-4a30-a942-35b37ea541d4
+              stock: 500
+              price: 29.99
+              sizes:
+                - S
+                - M
+                - L
+              colors:
+                - blue
+                - red
+              quantity: 2
+    CartQuantityUpdate:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000
+    ClothingColor:
+      type: string
+      enum:
+        - black
+        - white
+        - gray
+        - red
+        - blue
+        - green
+        - yellow
+        - orange
+        - purple
+        - pink
+        - brown
+    ClothingItemName:
+      type: string
+      enum:
+        - T-Shirt
+        - Polo Shirt
+        - Sweater
+        - Hoodie
+        - Sweatshirt
+        - Jacket
+        - Coat
+        - Jeans
+        - Trousers
+        - Shorts
+        - Dress
+        - Skirt
+        - Shirt
+        - Cardigan
+    ClothingSize:
+      type: string
+      enum:
+        - XXS
+        - XS
+        - S
+        - M
+        - L
+        - XL
+        - XXL
+        - 3XL
+        - 4XL
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Error_Unexpected:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 500
+          message: An unexpected error occured, please try again later.
+    Health:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+      examples:
+        - status: All systems operational.
+    Password:
+      type: string
+      pattern: ^[a-z]{4,8}[A-Z]{2,4}[0-9]{3,5}[!@#$%]{2,4}$
+    PoductModel_Quantified:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000
+      allOf:
+        - $ref: '#/components/schemas/ProductModel'
+    Price:
+      type: number
+      format: double
+      minimum: 0.01
+      maximum: 1000
+      multipleOf: 0.01
+    ProductError_Empty:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 404
+          message: No Products found.
+    ProductError_NotFound:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 404
+          message: Product Not Found.
+    ProductModel:
+      type: object
+      required:
+        - uuid
+        - seller
+        - name
+        - images
+        - stock
+        - price
+        - sizes
+        - colors
+      properties:
+        uuid:
+          $ref: '#/components/schemas/UUIDv4'
+        seller:
+          $ref: '#/components/schemas/UserModel_Read'
+        name:
+          $ref: '#/components/schemas/ClothingItemName'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/UUIDv4'
+          minItems: 0
+          maxItems: 10
+          uniqueItems: true
+        stock:
+          $ref: '#/components/schemas/Stock'
+        price:
+          $ref: '#/components/schemas/Price'
+        sizes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClothingSize'
+          minItems: 1
+          maxItems: 9
+          uniqueItems: true
+        colors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClothingColor'
+          minItems: 1
+          maxItems: 11
+          uniqueItems: true
+      examples:
+        - uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+          seller:
+            uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+            username: bob_123
+          name: T-Shirt
+          images:
+            - 27463fb9-feaf-4a30-a942-35b37ea541d4
+            - 27463fb9-feaf-4a30-a942-35b37ea541d4
+          stock: 500
+          price: 29.99
+          sizes:
+            - S
+            - M
+            - L
+          colors:
+            - blue
+            - red
+    Stock:
+      type: integer
+      format: int32
+      minimum: 0
+      maximum: 5000
+    UUIDv4:
+      type: string
+      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+    UserError_Duplicate:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 409
+          message: Username already taken.
+    UserError_Login:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Error'
+      examples:
+        - code: 401
+          message: Invalid Username or Password.
+    UserModel_Login:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        password:
+          $ref: '#/components/schemas/Password'
+      examples:
+        - username: bob_123
+          password: abcdAB123!@
+    UserModel_Partial:
+      type: object
+      required:
+        - uuid
+      properties:
+        uuid:
+          $ref: '#/components/schemas/UUIDv4'
+        username:
+          $ref: '#/components/schemas/Username'
+        password:
+          $ref: '#/components/schemas/Password'
+      examples:
+        - uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+          username: bob_123
+          password: abcdAB123!@
+    UserModel_Read:
+      type: object
+      required:
+        - uuid
+        - username
+      properties:
+        uuid:
+          $ref: '#/components/schemas/UUIDv4'
+        username:
+          $ref: '#/components/schemas/Username'
+      examples:
+        - uuid: 27463fb9-feaf-4a30-a942-35b37ea541d4
+          username: bob_123
+    Username:
+      type: string
+      pattern: ^[a-z][a-z0-9_]{4,15}$
+servers:
+  - url: https://marketplace.com
+    description: Production
+    variables: {}
+  - url: https://staging.marketplace.com
+    description: Staging
+    variables: {}
+  - url: http://localhost:9999
+    description: Development
+    variables: {}

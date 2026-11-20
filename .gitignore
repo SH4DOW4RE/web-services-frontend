@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+artifacts/
+.venv/
+*.pyc
+
+node_modules/
+.nyc_output/
+coverage/
+reports/

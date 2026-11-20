@@ -1,0 +1,13 @@
+{
+  "name": "mymarketplace-frontend-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dependency-free JavaScript unit tests for the vanilla MyMarketplace frontend",
+  "scripts": {
+    "test": "node --test tests_js/unit/api.test.cjs tests_js/unit/contract.test.cjs",
+    "test:unit": "node --test tests_js/unit/api.test.cjs tests_js/unit/contract.test.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>MyMarketplace</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./api.js" defer></script>
+    <script src="./script.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+        <div class="container header-inner">
+            <button class="brand" type="button" data-view="shop" aria-label="MyMarketplace home">
+                <span class="brand-mark" aria-hidden="true">M</span>
+                <span>MyMarketplace</span>
+            </button>
+
+            <nav class="site-nav" aria-label="Main navigation">
+                <button type="button" class="nav-link is-active" data-view="shop" aria-current="page">Shop</button>
+                <button type="button" class="nav-link" data-view="cart">Cart <span class="nav-count" id="cart-count" hidden>0</span></button>
+                <button type="button" class="nav-link" data-view="account">Account</button>
+            </nav>
+
+            <div class="header-meta">
+                <span id="connection-badge" class="connection-badge" title="API connection status"><span class="status-dot"></span><span id="connection-text">Checking...</span></span>
+                <span class="user-badge" id="user-badge">Guest</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content" id="main-content">
+        <!-- SHOP -->
+        <section id="shop-view" class="view" aria-labelledby="shop-title">
+            <div class="hero">
+                <div>
+                    <p class="eyebrow">YOUR EVERYDAY WARDROBE</p>
+                    <h1 id="shop-title">Find your next favorite.</h1>
+                    <p class="hero-copy">Browse clothing, compare options, and discover what's available.</p>
+                </div>
+                <div class="hero-art" aria-hidden="true">
+                    <span class="hero-circle"></span>
+                    <svg viewBox="0 0 128 128" focusable="false"><path d="M39 20 22 29 8 56l24 13 9-16v54h46V53l9 16 24-13-14-27-17-9-13 13H52L39 20Z" fill="currentColor" opacity=".92"/><path d="m52 33 12 13 12-13" fill="none" stroke="#f0eee8" stroke-width="4" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">THE COLLECTION</p>
+                    <h2>All products</h2>
+                    <p class="muted" id="products-summary">Loading products...</p>
+                </div>
+                <button type="button" class="button button-outline" id="refresh-products">Refresh</button>
+            </div>
+
+            <form id="search-form" class="toolbar" role="search">
+                <label class="search-field" for="product-search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
+                    <input id="product-search" type="search" name="q" placeholder="Search products by name..." autocomplete="off">
+                </label>
+                <button class="button button-primary" type="submit">Search</button>
+                <button class="button button-quiet" type="button" id="clear-search" hidden>Clear</button>
+                <label class="sort-field" for="sort-products">Sort
+                    <select id="sort-products">
+                        <option value="default">Default</option>
+                        <option value="price-low">Price: low to high</option>
+                        <option value="price-high">Price: high to low</option>
+                        <option value="name">Name: A–Z</option>
+                    </select>
+                </label>
+            </form>
+
+            <div id="products-message" class="message-panel" hidden></div>
+            <div id="product-grid" class="product-grid" aria-live="polite"></div>
+        </section>
+
+        <!-- CART -->
+        <section id="cart-view" class="view" aria-labelledby="cart-title" hidden>
+            <div class="page-title-row">
+                <div>
+                    <p class="eyebrow">YOUR SELECTION</p>
+                    <h1 id="cart-title">Shopping cart</h1>
+                    <p class="muted">Review items, update their quantities, or remove them.</p>
+                </div>
+                <button type="button" class="button button-outline" id="refresh-cart">Refresh cart</button>
+            </div>
+            <div id="cart-guest-hint" class="notice" hidden>Sign in from the Account tab if your cart needs an authenticated session.</div>
+            <div id="cart-message" class="message-panel" hidden></div>
+            <div id="cart-items" class="cart-items"></div>
+            <div id="cart-footer" class="cart-footer" hidden>
+                <span class="muted" id="cart-summary"></span>
+                <button type="button" class="button button-danger-outline" id="clear-cart">Clear cart</button>
+            </div>
+            <p class="muted small-note">Subtotal uses the product prices and quantities returned by the API. The API does not specify a currency or provide a checkout route.</p>
+        </section>
+
+        <!-- ACCOUNT -->
+        <section id="account-view" class="view" aria-labelledby="account-title" hidden>
+            <div class="page-title-row">
+                <div>
+                    <p class="eyebrow">YOUR SPACE</p>
+                    <h1 id="account-title">Account</h1>
+                    <p class="muted">Manage your marketplace profile and session.</p>
+                </div>
+            </div>
+
+            <div id="signed-out-panel" class="account-layout">
+                <div class="panel auth-panel">
+                    <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+                        <button type="button" id="login-tab" role="tab" aria-selected="true" class="auth-tab is-active">Log in</button>
+                        <button type="button" id="register-tab" role="tab" aria-selected="false" class="auth-tab">Register</button>
+                    </div>
+                    <h2 id="auth-heading">Welcome back</h2>
+                    <p class="muted" id="auth-description">Sign in to manage your account and cart.</p>
+                    <form id="auth-form" class="stacked-form">
+                        <label for="auth-username">Username
+                            <input id="auth-username" name="username" required autocomplete="username" minlength="5" maxlength="16" pattern="[a-z][a-z0-9_]{4,15}" title="5–16 characters: lowercase letters, numbers, or underscores; must start with a letter" placeholder="your_username">
+                        </label>
+                        <label for="auth-password">Password
+                            <input id="auth-password" name="password" type="password" required autocomplete="current-password" pattern="[a-z]{4,8}[A-Z]{2,4}[0-9]{3,5}[!@#$%]{2,4}" title="4–8 lowercase letters, 2–4 uppercase letters, 3–5 digits, and 2–4 symbols (! @ # $ %), in that order" placeholder="Your password">
+                        </label>
+                        <p class="muted field-hint">Password format: 4–8 lowercase letters, 2–4 uppercase letters, 3–5 digits, then 2–4 symbols (! @ # $ %).</p>
+                        <button type="submit" class="button button-primary button-wide" id="auth-submit">Log in</button>
+                    </form>
+                </div>
+                <div class="account-aside">
+                    <div class="aside-icon" aria-hidden="true">✦</div>
+                    <h3>Simple shopping, your way.</h3>
+                    <p>Browse products without signing in. Log in to access your cart and update your account details.</p>
+                </div>
+            </div>
+
+            <div id="signed-in-panel" hidden>
+                <div class="profile-strip panel">
+                    <div class="profile-avatar" aria-hidden="true" id="profile-avatar">U</div>
+                    <div class="profile-identity">
+                        <span class="muted">Signed in as</span>
+                        <h2 id="profile-username"></h2>
+                        <p class="muted profile-uuid" id="profile-uuid"></p>
+                    </div>
+                    <button type="button" id="logout-button" class="button button-outline">Log out</button>
+                </div>
+                <div class="account-forms">
+                    <form id="username-form" class="panel stacked-form">
+                        <h3>Change username</h3>
+                        <label for="new-username">New username
+                            <input id="new-username" required minlength="5" maxlength="16" pattern="[a-z][a-z0-9_]{4,15}" title="5–16 lowercase letters, digits, or underscores; must start with a letter" autocomplete="username">
+                        </label>
+                        <button class="button button-primary" type="submit">Save username</button>
+                    </form>
+                    <form id="password-form" class="panel stacked-form">
+                        <h3>Change password</h3>
+                        <label for="new-password">New password
+                            <input id="new-password" type="password" autocomplete="new-password" required pattern="[a-z]{4,8}[A-Z]{2,4}[0-9]{3,5}[!@#$%]{2,4}" title="4–8 lowercase, 2–4 uppercase, 3–5 digits, then 2–4 of ! @ # $ %">
+                        </label>
+                        <p class="muted field-hint">4–8 lowercase, 2–4 uppercase, 3–5 digits, then 2–4 symbols (! @ # $ %).</p>
+                        <button class="button button-primary" type="submit">Save password</button>
+                    </form>
+                </div>
+                <div class="danger-zone panel">
+                    <div>
+                        <h3>Delete account</h3>
+                        <p class="muted">This action cannot be undone.</p>
+                    </div>
+                    <button type="button" id="delete-account" class="button button-danger-outline">Delete account</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p>MyMarketplace <span class="footer-divider">·</span> Plain HTML, CSS &amp; JavaScript</p>
+            <form id="api-url-form" class="api-url-form">
+                <label for="api-url">API server</label>
+                <input id="api-url" type="url" required spellcheck="false" aria-label="API base URL" placeholder="http://localhost:9999">
+                <button class="button button-outline button-small" type="submit">Apply</button>
+            </form>
+        </div>
+    </footer>
+
+    <dialog id="product-dialog" class="product-dialog" aria-labelledby="detail-title">
+        <div class="dialog-heading">
+            <h2 id="detail-title">Product details</h2>
+            <button type="button" class="icon-button" id="close-dialog" aria-label="Close product details">×</button>
+        </div>
+        <div id="product-detail-content"></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <template id="product-card-template">
+        <article class="product-card">
+            <button type="button" class="product-card-button">
+                <span class="product-art" aria-hidden="true">
+                    <svg viewBox="0 0 128 128"><path d="M39 20 22 29 8 56l24 13 9-16v54h46V53l9 16 24-13-14-27-17-9-13 13H52L39 20Z" fill="currentColor"/><path d="m52 33 12 13 12-13" fill="none" stroke="white" stroke-width="4" stroke-linejoin="round"/></svg>
+                    <span class="placeholder-caption">No image preview</span>
+                </span>
+                <span class="product-copy">
+                    <span class="product-eyebrow"></span>
+                    <span class="product-name"></span>
+                    <span class="product-meta"></span>
+                    <span class="product-bottom"><strong class="product-price"></strong><span class="product-link">View details →</span></span>
+                </span>
+            </button>
+            <div class="product-card-actions">
+                <button type="button" class="button button-primary button-wide add-to-cart-button">Add to cart</button>
+            </div>
+        </article>
+    </template>
+</body>
+</html>
